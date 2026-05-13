@@ -1,0 +1,8 @@
+picamera2==0.3.36
+ultralytics==8.4.115
+openwakeword==0.6.0 --no-deps
+pyaudio==0.2.14
+numpy==2.5.1
+tqdm==4.70.0
+onnxruntime==1.28.0
+scipy==1.18.0
