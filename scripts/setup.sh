@@ -15,9 +15,8 @@ apt install -y libgl1
 # PyAudio dependencies
 apt install -y portaudio19-dev
 
-# Install pip and python packages
-apt install python3-pip -y
-python3 -m venv --system-site-packages .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
+# Install uv and python packages
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source "$HOME/.local/bin/env"
+uv venv --system-site-packages
+uv sync
