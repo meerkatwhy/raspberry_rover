@@ -392,7 +392,7 @@ class Listener:
         audio /= 32768.0
 
         transcription = await asyncio.to_thread(self._transcribe_sync, audio)
-        return transcription.strip()
+        return transcription.strip().lower()
 
     def _transcribe_sync(self, audio: np.ndarray) -> str:
         # Segment generation is lazy, so both transcribe() and iteration

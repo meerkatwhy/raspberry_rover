@@ -3,22 +3,24 @@ from enum import Enum, auto
 
 from robot.services.listener import Listener
 from robot.services.vision import Vision
+from config import MODELS_DIR
 
 
 class State(Enum):
     IDLE = auto()
     TRANSCRIBING = auto()
-    MOVING = auto()
-    DETECTING_OBJECTS = auto()
+    EXECUTING = auto()
     STOPPING = auto()
 
 
 class StateMachine:
     def __init__(self) -> None:
         self.listener = Listener()
-
-        # self.vision = Vision()
-
+        self.vision = Vision(
+            model_path=MODELS_DIR / "yolo26n.onnx",
+            size=(1280, 1280),
+            confidence=0.3
+        )
         self.state = State.IDLE
         self.transcription = ""
         self.commands = []
@@ -60,11 +62,9 @@ class StateMachine:
             await self.listener.close()
 
     def _parse_transcript(self) -> None:
-        # parse transcript and generate correct commands to fill self.commands
-        pass
+        if "what do you see" in self.transcription:
+            pass
+
 
     def stop(self) -> None:
         self.state = State.STOPPING
-
-mysm = StateMachine()
-asyncio.run(mysm.run())
