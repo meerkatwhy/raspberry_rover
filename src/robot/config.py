@@ -1,4 +1,64 @@
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-MODELS_DIR = ROOT_DIR / "models"
+
+ROOT = Path(__file__).resolve().parents[2]
+
+# TB6612FNG (left motors share channel A; right motors share channel B)
+MOTOR_LEFT_FORWARD_PIN = None
+MOTOR_LEFT_BACKWARD_PIN = None
+MOTOR_LEFT_PWM_PIN = None
+MOTOR_RIGHT_FORWARD_PIN = None
+MOTOR_RIGHT_BACKWARD_PIN = None
+MOTOR_RIGHT_PWM_PIN = None
+MOTOR_STANDBY_PIN = None
+
+# One pulse is one complete rising/falling cycle. Counts are taken on rising edges.
+ENCODER_PINS = (None, None, None, None)
+ENCODER_PULSES_PER_REVOLUTION = 330
+WHEEL_DIAMETER_M = 0.065
+DRIVE_SPEED = 0.55
+TURN_SPEED = 0.45
+LEFT_SPEED_SCALE = 1.0
+RIGHT_SPEED_SCALE = 1.0
+CONTROL_PERIOD_S = 0.01
+
+# HC-SR04 (the echo signal must be reduced to 3.3 V).
+ULTRASONIC_TRIGGER_PIN = 4
+ULTRASONIC_ECHO_PIN = 17
+OBSTACLE_DISTANCE_M = 0.20
+
+# MPU6050
+I2C_BUS = 1
+MPU6050_ADDRESS = 0x68
+MPU_GYRO_Z_SIGN = 1
+GYRO_CALIBRATION_SAMPLES = 300
+
+# Camera and vision
+CAMERA_SIZE = (640, 480)
+YOLO_MODEL = ROOT / "models" / "yolo26n.onnx"
+VISION_CONFIDENCE = 0.45
+VISION_FRAME_INTERVAL_S = 0.15
+TARGET_CENTER_TOLERANCE = 0.12
+SEARCH_TIMEOUT_S = 30.0
+
+# Audio input. None asks PyAudio to use its default input device.
+AUDIO_DEVICE_INDEX = None
+AUDIO_RATE = 16_000
+AUDIO_CHANNELS = 1
+AUDIO_CHUNK_SAMPLES = 1_280
+AUDIO_PREROLL_S = 2.0
+WAKEWORD_MODEL = "hey_rhasspy"
+WAKEWORD_THRESHOLD = 0.5
+VAD_THRESHOLD = 0.5
+VAD_SILENCE_MS = 800
+VAD_MIN_RECORDING_S = 1.2
+VAD_START_TIMEOUT_S = 5.0
+MAX_RECORDING_S = 15.0
+WHISPER_MODEL = "base.en"
+WHISPER_COMPUTE_TYPE = "int8"
+
+# Piper executable/model and ALSA playback. Set PIPER_MODEL to an installed voice.
+PIPER_EXECUTABLE = "piper"
+PIPER_MODEL = None
+PIPER_SAMPLE_RATE = 22_050
+APLAY_DEVICE = None

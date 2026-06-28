@@ -1,61 +1,59 @@
-import asyncio
+
+from collections import Counter
 from dataclasses import dataclass
+
 from ultralytics import YOLO
+
+from robot import config
 from robot.hardware.camera import Camera
 
-@dataclass(frozen=True, slots=True)
+
+@dataclass(frozen=True)
 class Detection:
-    """
-    Represents a detection result of a single object.
-    x1, y1 are top-left coordinates.
-    x2, y2 are bottom-right coordinates.
-    Coordinates are normalized to [0, 1].
-    """
-    name: str
-    x1: float
-    y1: float
-    x2: float
-    y2: float
+    label: str
+    confidence: float
+    center_x: float
+
 
 class Vision:
-    def __init__(self, 
-                 model_path: str, 
-                 size:       tuple[int, int], 
-                 confidence: float) -> None:
-        self.model_path = model_path
-        self.model = YOLO(model_path, task="detect")
-        self.confidence = confidence
-        self.camera = Camera(size=size)
+    def __init__(self, camera: Camera) -> None:
+        self._camera = camera
+        self._model = YOLO(str(config.YOLO_MODEL), task="detect")
 
-    async def detect_objects(self) -> list[Detection]:
-        """
-        Captures a frame from the camera and runs YOLO to detect objects.
-        Returns a list of Detection objects.
-        """
-        return await asyncio.to_thread(self._detect_objects_sync)
-
-    def _detect_objects_sync(self) -> list[Detection]:
-        frame = self.camera.capture_frame()
-        result = self.model.predict(
-                    source=frame,
-                    conf=self.confidence,
-                    verbose=False,
-                )[0]
-        class_ids = result.boxes.cls
-        xyxyn = result.boxes.xyxyn
-
+    def detect(self) -> list[Detection]:
+        image = self._camera.capture()
+        height, width = image.shape[:2]
+        result = self._model.predict(
+            image,
+            conf=config.VISION_CONFIDENCE,
+            verbose=False,
+        )[0]
         detections = []
-        for class_id, coordinates in zip(class_ids, xyxyn):
-            x1, y1, x2, y2 = map(float, coordinates)
-            detection = Detection(
-                name=self.model.names[int(class_id)],
-                x1=x1,
-                y1=y1,
-                x2=x2,
-                y2=y2
+        for class_id, confidence, box in zip(
+            result.boxes.cls.cpu().numpy(),
+            result.boxes.conf.cpu().numpy(),
+            result.boxes.xyxy.cpu().numpy(),
+        ):
+            x1, _, x2, _ = box
+            detections.append(
+                Detection(
+                    label=result.names[int(class_id)].lower(),
+                    confidence=float(confidence),
+                    center_x=float((x1 + x2) / (2 * width)),
+                )
             )
-            detections.append(detection)
         return detections
 
-    def close(self) -> None:
-        self.camera.close()
+    def find(self, label: str) -> Detection | None:
+        matches = [item for item in self.detect() if item.label == label.lower()]
+        return max(matches, key=lambda item: item.confidence, default=None)
+
+    def describe(self) -> str:
+        counts = Counter(item.label for item in self.detect())
+        if not counts:
+            return "I don't see any recognized objects."
+        objects = [
+            f"{count} {label if count == 1 else label + 's'}"
+            for label, count in sorted(counts.items())
+        ]
+        return "I see " + ", ".join(objects) + "."

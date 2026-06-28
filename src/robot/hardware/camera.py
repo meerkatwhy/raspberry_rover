@@ -1,22 +1,22 @@
 from picamera2 import Picamera2
-import cv2
+
+from robot import config
 
 
 class Camera:
-    def __init__(self, size: tuple[int, int]) -> None:
-        self.camera = Picamera2()
-        self.camera.configure(self.camera.create_still_configuration(main={"size": size}))
-        self.camera.start()
+    def __init__(self) -> None:
+        self._camera = Picamera2()
+        setup = self._camera.create_video_configuration(
+            main={"size": config.CAMERA_SIZE, "format": "RGB888"}
+        )
+        self._camera.configure(setup)
 
-    def capture_frame(self) -> list[dict[str, str | float]]:
-        """
-        Because the camera is mounted upside down, we need to rotate the frame 180 degrees.
-        """
-        frame = self.camera.capture_array("main")
-        frame = cv2.rotate(frame, cv2.ROTATE_180)
+    def start(self) -> None:
+        self._camera.start()
 
-        return frame
+    def capture(self):
+        return self._camera.capture_array()
 
     def close(self) -> None:
-        self.camera.stop()
-        self.camera.close()
+        self._camera.stop()
+        self._camera.close()
