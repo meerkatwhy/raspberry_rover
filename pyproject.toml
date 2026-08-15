@@ -3,12 +3,13 @@ name = "raspberry-rover"
 version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
-    "faster-whisper==1.2.1",
+    "faster-whisper>=1.2.1",
     "openwakeword==0.6.0",
-    "picamera2==0.3.36",
-    "pyaudio==0.2.14",
-    "silero-vad==6.2.1",
-    "ultralytics==8.4.115",
+    "picamera2>=0.3.36",
+    "piper-tts>=1.6.1",
+    "pyaudio>=0.2.14",
+    "silero-vad>=6.2.1",
+    "ultralytics>=8.4.115",
 ]
 
 [build-system]

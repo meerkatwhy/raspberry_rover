@@ -4,13 +4,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 # TB6612FNG (left motors share channel A; right motors share channel B)
-MOTOR_LEFT_FORWARD_PIN = None
-MOTOR_LEFT_BACKWARD_PIN = None
-MOTOR_LEFT_PWM_PIN = None
-MOTOR_RIGHT_FORWARD_PIN = None
-MOTOR_RIGHT_BACKWARD_PIN = None
-MOTOR_RIGHT_PWM_PIN = None
-MOTOR_STANDBY_PIN = None
+MOTOR_LEFT_FORWARD_PIN = 5
+MOTOR_LEFT_BACKWARD_PIN = 6
+MOTOR_LEFT_PWM_PIN = 12
+MOTOR_RIGHT_FORWARD_PIN = 22
+MOTOR_RIGHT_BACKWARD_PIN = 27
+MOTOR_RIGHT_PWM_PIN = 13
 
 # One pulse is one complete rising/falling cycle. Counts are taken on rising edges.
 ENCODER_PINS = (None, None, None, None)
@@ -28,14 +27,11 @@ ULTRASONIC_ECHO_PIN = 17
 OBSTACLE_DISTANCE_M = 0.20
 
 # MPU6050
-I2C_BUS = 1
-MPU6050_ADDRESS = 0x68
-MPU_GYRO_Z_SIGN = 1
-GYRO_CALIBRATION_SAMPLES = 300
+GYRO_CALIBRATION_SAMPLES = 200
 
 # Camera and vision
 CAMERA_SIZE = (640, 480)
-YOLO_MODEL = ROOT / "models" / "yolo26n.onnx"
+YOLO_MODEL = ROOT / "models/yolo/yolo26n.onnx"
 VISION_CONFIDENCE = 0.45
 VISION_FRAME_INTERVAL_S = 0.15
 TARGET_CENTER_TOLERANCE = 0.12
@@ -55,10 +51,10 @@ VAD_MIN_RECORDING_S = 1.2
 VAD_START_TIMEOUT_S = 5.0
 MAX_RECORDING_S = 15.0
 WHISPER_MODEL = "base.en"
-WHISPER_COMPUTE_TYPE = "int8"
 
-# Piper executable/model and ALSA playback. Set PIPER_MODEL to an installed voice.
+# Piper executable/model and ALSA playback.
 PIPER_EXECUTABLE = "piper"
-PIPER_MODEL = None
+PIPER_MODEL = ROOT / "models/piper/en_US-ryan-medium"
 PIPER_SAMPLE_RATE = 22_050
-APLAY_DEVICE = None
+APLAY_DEVICE = "plughw:1,0"
+SPEAKER_VOLUME = 0.25

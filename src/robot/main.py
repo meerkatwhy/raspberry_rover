@@ -1,12 +1,14 @@
+from robot import config
 from robot.hardware.camera import Camera
 from robot.hardware.imu import MPU6050
 from robot.hardware.microphone import Microphone
 from robot.hardware.motors import Drive
-from robot.hardware.speaker import Speaker
+from robot.hardware.amp import Amp
 from robot.hardware.ultrasonic import Ultrasonic
 
 from robot.services.commands import CommandService
 from robot.services.listener import Listener
+from robot.services.speaker import Speaker
 from robot.services.vision import Vision
 
 
@@ -16,11 +18,11 @@ def main() -> None:
     drive = Drive()
     imu = MPU6050()
     ultrasonic = Ultrasonic()
-    speaker = Speaker()
+    speaker = Speaker(Amp(config.APLAY_DEVICE))
 
-    camera.start()
     microphone.start()
-    imu.calibrate()
+    camera.start()
+    imu.start()
     vision = Vision(camera)
     commands = CommandService(drive, imu, ultrasonic, vision, speaker)
     listener = Listener(microphone, commands.cancel_all, commands.submit_text)

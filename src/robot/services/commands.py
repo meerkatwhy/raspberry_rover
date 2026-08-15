@@ -9,9 +9,9 @@ from threading import Condition, Event, Thread
 from robot import config
 from robot.hardware.imu import MPU6050
 from robot.hardware.motors import Drive
-from robot.hardware.speaker import Speaker
 from robot.hardware.ultrasonic import Ultrasonic
 from robot.services.vision import Vision
+from robot.services.speaker import Speaker
 
 
 class CommandKind(Enum):
@@ -102,47 +102,6 @@ def parse_command(text: str) -> Command | None:
     match = re.search(r"\bfind (?:a |an |the )?(.+)$", text)
     if match:
         return Command(CommandKind.FIND, target=match.group(1).strip())
-    return None
-
-
-def parse_command2(text: str) -> Command | None:
-    tokens = re.sub(r"[^a-z0-9.]+", " ", text.lower()).split()
-    if tokens[:2] == ["hey", "rhasspy"]:
-        tokens = tokens[2:]
-    if not tokens:
-        return None
-
-    command, *arguments = tokens
-
-    if command == "go":
-        if not arguments or arguments[-1] not in ("meter", "meters"):
-            return None
-        amount = _number(" ".join(arguments[:-1]))
-        return Command(CommandKind.GO, amount=amount) if amount is not None else None
-
-    if command == "turn":
-        if len(arguments) < 3 or arguments[0] not in ("left", "right"):
-            return None
-        if arguments[-1] not in ("degree", "degrees"):
-            return None
-        amount = _number(" ".join(arguments[1:-1]))
-        if amount is None:
-            return None
-        direction = 1 if arguments[0] == "right" else -1
-        return Command(CommandKind.TURN, amount=amount, direction=direction)
-
-    if command == "describe":
-        return (
-            Command(CommandKind.DESCRIBE)
-            if arguments in (["scene"], ["the", "scene"])
-            else None
-        )
-
-    if command == "find":
-        if arguments and arguments[0] in ("a", "an", "the"):
-            arguments = arguments[1:]
-        return Command(CommandKind.FIND, target=" ".join(arguments)) if arguments else None
-
     return None
 
 
@@ -242,7 +201,7 @@ class CommandService:
             speed = config.TURN_SPEED * direction
             self._drive.set(-speed, speed)
             now = time.monotonic()
-            angle += self._imu.yaw_rate_dps * (now - previous)
+            angle += self._imu.yaw_dps * (now - previous)
             previous = now
             time.sleep(config.CONTROL_PERIOD_S)
         return not cancel.is_set()
@@ -262,7 +221,7 @@ class CommandService:
                 break
             self._drive.set(config.TURN_SPEED, -config.TURN_SPEED)
             now = time.monotonic()
-            angle += self._imu.yaw_rate_dps * (now - previous)
+            angle += self._imu.yaw_dps * (now - previous)
             previous = now
             time.sleep(config.VISION_FRAME_INTERVAL_S)
         self._drive.stop()

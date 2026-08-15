@@ -1,7 +1,7 @@
-
 import io
 import time
 import wave
+from collections import deque
 from collections.abc import Callable
 from threading import Event, Thread
 
@@ -12,7 +12,7 @@ from openwakeword.model import Model as WakeWordModel
 from silero_vad import load_silero_vad
 
 from robot import config
-from robot.hardware.microphone import Microphone
+from robot.hardware.microphone import AudioChunk, Microphone
 
 
 class Listener:
@@ -27,25 +27,31 @@ class Listener:
         self._microphone = microphone
         self._on_wake = on_wake
         self._on_transcript = on_transcript
-        self._stop = Event()
+
+        frame_seconds = config.AUDIO_CHUNK_SAMPLES / config.AUDIO_RATE
+        preroll_frames = round(config.AUDIO_PREROLL_S / frame_seconds)
+        self._preroll = deque(maxlen=preroll_frames)
+
         self._thread = Thread(target=self._run, name="listener", daemon=True)
+        self._stop = Event()
+
         self._wakeword = WakeWordModel(wakeword_models=[config.WAKEWORD_MODEL])
         self._vad = load_silero_vad()
         self._whisper = WhisperModel(
             config.WHISPER_MODEL,
-            compute_type=config.WHISPER_COMPUTE_TYPE,
+            compute_type="int8",
         )
 
     def start(self) -> None:
+        self._microphone.start()
         self._thread.start()
 
     def _run(self) -> None:
-        sequence = 0
         while not self._stop.is_set():
-            frame = self._microphone.wait_after(sequence)
+            frame = self._microphone.get_chunk()
             if frame is None:
                 continue
-            sequence = frame.sequence
+            self._preroll.append(frame)
             samples = np.frombuffer(frame.data, dtype=np.int16)
             predictions = self._wakeword.predict(samples)
             if max(predictions.values(), default=0.0) < config.WAKEWORD_THRESHOLD:
@@ -53,14 +59,13 @@ class Listener:
 
             self._on_wake()
             self._wakeword.reset()
-            frames, sequence = self._record(frame.sequence)
+            frames = self._record()
             transcript = self._transcribe(b"".join(item.data for item in frames))
             if transcript:
                 self._on_transcript(transcript)
 
-    def _record(self, trigger_sequence: int):
-        frames = self._microphone.preroll_through(trigger_sequence)
-        sequence = trigger_sequence
+    def _record(self) -> list[AudioChunk]:
+        frames = list(self._preroll)
         started = time.monotonic()
         speech_seen = False
         silent_samples = 0
@@ -68,10 +73,10 @@ class Listener:
         self._vad.reset_states()
 
         while not self._stop.is_set():
-            frame = self._microphone.wait_after(sequence)
+            frame = self._microphone.get_chunk()
             if frame is None:
                 continue
-            sequence = frame.sequence
+            self._preroll.append(frame)
             frames.append(frame)
             normalized = np.frombuffer(frame.data, dtype=np.int16).astype(np.float32)
             vad_buffer = np.concatenate((vad_buffer, normalized / 32768.0))
@@ -97,7 +102,7 @@ class Listener:
                 break
             if elapsed >= config.MAX_RECORDING_S:
                 break
-        return frames, sequence
+        return frames
 
     def _transcribe(self, pcm: bytes) -> str:
         wav = io.BytesIO()

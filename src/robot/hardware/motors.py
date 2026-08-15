@@ -51,10 +51,8 @@ class Drive:
             enable=config.MOTOR_RIGHT_PWM_PIN,
             pwm=True,
         )
-        self.standby = DigitalOutputDevice(config.MOTOR_STANDBY_PIN)
         self.encoders = EncoderBank()
         self._inhibited = Event()
-        self.standby.on()
 
     def set(self, left: float, right: float) -> None:
         if self._inhibited.is_set() and left > 0 and right > 0:
@@ -88,4 +86,3 @@ class Drive:
         self.encoders.close()
         self.left.close()
         self.right.close()
-        self.standby.close()
